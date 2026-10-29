@@ -4,3 +4,11 @@ node_modules/
 .DS_Store
 *.log
 *.xlsx
+*.xls
+*.xlsm
+*.xlsb
+~$*.xls*
+*.xls
+*.xlsm
+*.xlsb
+~$*.xls*
