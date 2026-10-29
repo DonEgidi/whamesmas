@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsSender Pro | Envíos Masivos WhatsApp</title>
+    <meta name="description" content="Sistema inteligente para envío masivo de mensajes de WhatsApp a números no agendados con variables dinámicas y protección anti-baneo.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>WhatsSender <span>PRO</span></h1>
+                    <p>Envíos a números no agendados</p>
+                </div>
+            </div>
+
+            <!-- WhatsApp Connection Status Badge -->
+            <div class="header-actions">
+                <div id="waStatusBadge" class="status-badge status-initializing">
+                    <span class="status-dot"></span>
+                    <span id="waStatusText">Iniciando WhatsApp...</span>
+                </div>
+                
+                <button id="btnShowQr" class="btn btn-secondary btn-sm" title="Ver código QR de vinculación">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>Vincular QR</span>
+                </button>
+
+                <div class="dropdown">
+                    <button id="btnSessionMenu" class="btn btn-icon" title="Opciones de sesión">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                    </button>
+                    <div id="sessionDropdownMenu" class="dropdown-menu hidden">
+                        <button id="btnRestartClient" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            Reiniciar WhatsApp
+                        </button>
+                        <button id="btnLogoutClient" class="dropdown-item text-danger">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                            Cerrar Sesión (Desvincular)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Notification Banner -->
+        <div id="notificationBanner" class="notification-banner hidden">
+            <span id="notificationMessage"></span>
+            <button id="btnCloseNotification" class="btn-close">&times;</button>
+        </div>
+
+        <!-- Left / Right Grid -->
+        <div class="dashboard-grid">
+            
+            <!-- Left Column: Setup & Message -->
+            <div class="grid-column left-col">
+                
+                <!-- CARD 1: Carga de Contactos -->
+                <section class="card" id="cardContacts">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="step-num">1</span>
+                            <h2>Lista de Contactos</h2>
+                        </div>
+                        <a href="/api/download-template" download class="btn-link" title="Descargar plantilla de ejemplo">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            Descargar Plantilla Excel
+                        </a>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Mode Selector Tabs -->
+                        <div class="tabs-nav">
+                            <button class="tab-btn active" id="tabUploadFileBtn" data-tab="tabUpload">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                Subir Excel o CSV
+                            </button>
+                            <button class="tab-btn" id="tabManualInputBtn" data-tab="tabManual">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Pegar Números Manualmente
+                            </button>
+                        </div>
+
+                        <!-- Tab 1: File Upload -->
+                        <div id="tabUpload" class="tab-content active">
+                            <div class="dropzone" id="fileDropzone">
+                                <input type="file" id="contactFileInput" accept=".xlsx, .xls, .csv" class="file-input-hidden">
+                                <div class="dropzone-content">
+                                    <div class="dropzone-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                                            <line x1="9" y1="15" x2="12" y2="12"></line>
+                                            <line x1="15" y1="15" x2="12" y2="12"></line>
+                                        </svg>
+                                    </div>
+                                    <p class="dropzone-title">Arrastra tu archivo Excel (.xlsx) o CSV aquí</p>
+                                    <p class="dropzone-subtitle">o haz clic para seleccionar desde tu computadora</p>
+                                    <div class="dropzone-tags">
+                                        <span>.xlsx</span>
+                                        <span>.xls</span>
+                                        <span>.csv</span>
+                                    </div>
+                            </div>
+                            <div id="detectedFilesContainer" class="detected-files-box mt-3 hidden">
+                                <div class="detected-files-header">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                                    <span>Archivos Excel detectados en tu carpeta:</span>
+                                </div>
+                                <div id="detectedFilesList" class="detected-files-chips mt-2"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Manual Input -->
+                        <div id="tabManual" class="tab-content">
+                            <div class="manual-input-box">
+                                <label for="manualNumbersInput" class="form-label">
+                                    Pega un número por línea (opcionalmente con nombre separado por coma):
+                                </label>
+                                <textarea id="manualNumbersInput" class="form-control" rows="5" placeholder="Ejemplo:&#10;5491122334455, Juan Perez&#10;5491199887766, Maria Garcia&#10;+54 9 351 4433221, Carlos"></textarea>
+                                <button id="btnProcessManual" class="btn btn-secondary btn-sm mt-2">
+                                    Cargar contactos pegados
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- File Loaded Meta & Column Mapping -->
+                        <div id="fileLoadedArea" class="file-loaded-area hidden">
+                            <div class="file-info-badge">
+                                <div class="file-meta">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                    <span id="loadedFileName" class="file-name">archivo.xlsx</span>
+                                    <span id="loadedRowCount" class="badge badge-primary">0 contactos</span>
+                                </div>
+                                <button id="btnClearFile" class="btn-text-danger" title="Quitar archivo">Quitar</button>
+                            </div>
+
+                            <div class="form-grid mt-3">
+                                <div class="form-group">
+                                    <label for="selectPhoneCol" class="form-label">Columna del Teléfono:</label>
+                                    <select id="selectPhoneCol" class="form-control"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="selectCountryPrefix" class="form-label">Prefijo por defecto (si falta):</label>
+                                    <select id="selectCountryPrefix" class="form-control">
+                                        <option value="549">🇦🇷 Argentina (+54 9)</option>
+                                        <option value="52">🇲🇽 México (+52)</option>
+                                        <option value="57">🇨🇴 Colombia (+57)</option>
+                                        <option value="56">🇨🇱 Chile (+56)</option>
+                                        <option value="34">🇪🇸 España (+34)</option>
+                                        <option value="51">🇵🇪 Perú (+51)</option>
+                                        <option value="598">🇺🇾 Uruguay (+598)</option>
+                                        <option value="1">🇺🇸 Estados Unidos (+1)</option>
+                                        <option value="">(Ninguno / Ya incluido en números)</option>
+                                    </select>
+                            </div>
+                            <div class="clean-format-hint mt-2">
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                <span><b>Limpieza automática activa:</b> se eliminan guiones (<code>-</code>), espacios, paréntesis <code>(0...)</code> y el <code>15</code> para compatibilidad total con WhatsApp.</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- CARD 2: Redacción del Mensaje y Variables -->
+                <section class="card" id="cardMessage">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="step-num">2</span>
+                            <h2>Mensaje y Variables Dinámicas</h2>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- Dynamic Variable Chips -->
+                        <div class="variables-section">
+                            <label class="form-label">Variables disponibles (haz clic para insertar en el texto):</label>
+                            <div id="variableChipsContainer" class="variable-chips">
+                                <span class="no-vars-hint">Carga un archivo para ver las columnas disponibles...</span>
+                            </div>
+                        </div>
+
+                        <!-- Message Textarea -->
+                        <div class="message-editor-wrapper mt-3">
+                            <div class="editor-toolbar">
+                                <button type="button" class="tool-btn" data-format="*" title="Negrita (*texto*)"><b>B</b></button>
+                                <button type="button" class="tool-btn" data-format="_" title="Cursiva (_texto_)"><i>I</i></button>
+                                <button type="button" class="tool-btn" data-format="~" title="Tachado (~texto~)"><s>S</s></button>
+                                <button type="button" class="tool-btn" data-format="```" title="Monospaciado"><code>&lt;&gt;</code></button>
+                                <div class="toolbar-spacer"></div>
+                                <span id="charCount" class="counter-text">0 caracteres</span>
+                            </div>
+                            <textarea id="messageTemplateInput" class="form-control message-textarea" rows="6" placeholder="Hola {nombre}, te recordamos tu aviso pendiente con {empresa}. Saludos!"></textarea>
+                        </div>
+                        <p class="input-hint">Cualquier columna entre llaves como <code>{nombre}</code> o <code>{monto}</code> se reemplazará automáticamente para cada destinatario.</p>
+                    </div>
+                </section>
+
+                <!-- CARD 3: Configuración Anti-Baneo -->
+                <section class="card" id="cardSettings">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="step-num">3</span>
+                            <h2>Protección Anti-Baneo y Tiempos</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="minDelayInput" class="form-label">Demora mínima (segundos):</label>
+                                <input type="number" id="minDelayInput" class="form-control" value="8" min="2" max="120">
+                            </div>
+                            <div class="form-group">
+                                <label for="maxDelayInput" class="form-label">Demora máxima (segundos):</label>
+                                <input type="number" id="maxDelayInput" class="form-control" value="20" min="4" max="180">
+                            </div>
+                        </div>
+                        <p class="input-hint">El sistema esperará un tiempo aleatorio entre el mínimo y el máximo antes de cada mensaje para imitar el comportamiento humano real y evitar que WhatsApp detecte envíos automatizados.</p>
+
+                        <!-- Single Test Message Box -->
+                        <div class="test-message-box mt-3">
+                            <div class="test-header">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                                <h4>Enviar 1 Mensaje de Prueba</h4>
+                            </div>
+                            <div class="test-body">
+                                <input type="text" id="testPhoneInput" class="form-control" placeholder="Ej: 5491122334455 (tu propio número)">
+                                <button id="btnSendTestMessage" class="btn btn-secondary">Probar Envío</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Right Column: Preview & Live Campaign -->
+            <div class="grid-column right-col">
+
+                <!-- WhatsApp Chat Live Preview -->
+                <section class="card chat-preview-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <h2>Vista Previa en WhatsApp</h2>
+                        </div>
+                        <div class="preview-contact-picker">
+                            <span class="preview-label">Ver para:</span>
+                            <select id="previewContactSelect" class="form-control form-control-sm"></select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Simulated WhatsApp Chat Window -->
+                        <div class="wa-mockup">
+                            <div class="wa-mockup-header">
+                                <div class="wa-mockup-avatar">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                </div>
+                                <div class="wa-mockup-user">
+                                    <div id="waPreviewName" class="wa-mockup-name">Destinatario</div>
+                                    <div id="waPreviewPhone" class="wa-mockup-status">+54 9 11 ...</div>
+                                </div>
+                            </div>
+                            <div class="wa-mockup-chat">
+                                <div class="wa-bubble-wrapper">
+                                    <div class="wa-bubble outgoing">
+                                        <div id="waBubbleContent" class="wa-bubble-content">Escribe un mensaje para ver cómo se verá aquí...</div>
+                                        <div class="wa-bubble-meta">
+                                            <span id="waBubbleTime">12:00</span>
+                                            <svg class="double-check" viewBox="0 0 16 11" fill="none">
+                                                <path d="M11.0002 0.5L4.50024 7L1.50024 4" stroke="#53bdeb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M14.5002 0.5L8.00024 7" stroke="#53bdeb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CARD 4: Monitor y Control de Campaña -->
+                <section class="card campaign-monitor-card" id="cardCampaign">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="step-num">4</span>
+                            <h2>Control de Campaña y Progreso</h2>
+                        </div>
+                        <div id="campaignBadgeState" class="badge badge-idle">Inactivo</div>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- Big Action Buttons -->
+                        <div class="campaign-actions">
+                            <button id="btnStartCampaign" class="btn btn-primary btn-lg">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                Iniciar Envíos
+                            </button>
+                            <button id="btnPauseCampaign" class="btn btn-warning btn-lg hidden">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                                Pausar
+                            </button>
+                            <button id="btnResumeCampaign" class="btn btn-primary btn-lg hidden">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                Reanudar
+                            </button>
+                            <button id="btnStopCampaign" class="btn btn-danger btn-lg hidden">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="4" y="4" width="16" height="16"></rect></svg>
+                                Detener
+                            </button>
+                        </div>
+
+                        <!-- Progress Bar & Countdown -->
+                        <div class="progress-section mt-4">
+                            <div class="progress-header">
+                                <span class="progress-label">Progreso general</span>
+                                <span id="progressPercent" class="progress-value">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                            </div>
+                            <!-- Countdown Indicator -->
+                            <div id="countdownBox" class="countdown-box hidden">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span>Próximo envío en <b id="countdownSeconds">0</b>s...</span>
+                            </div>
+                        </div>
+
+                        <!-- Metric Counters -->
+                        <div class="metrics-grid mt-4">
+                            <div class="metric-card">
+                                <div class="metric-num text-muted" id="metricTotal">0</div>
+                                <div class="metric-label">Total</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-num text-success" id="metricSent">0</div>
+                                <div class="metric-label">Enviados</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-num text-warning" id="metricUnregistered">0</div>
+                                <div class="metric-label">Sin WhatsApp</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-num text-danger" id="metricFailed">0</div>
+                                <div class="metric-label">Errores</div>
+                            </div>
+                        </div>
+
+                        <!-- Results Table -->
+                        <div class="results-table-section mt-4">
+                            <div class="results-header">
+                                <h3>Registro de Envíos</h3>
+                                <button id="btnExportCsv" class="btn btn-secondary btn-sm" disabled>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    Exportar Reporte
+                                </button>
+                            </div>
+                            <div class="table-container">
+                                <table class="results-table" id="resultsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Teléfono</th>
+                                            <th>Nombre</th>
+                                            <th>Estado</th>
+                                            <th>Detalle</th>
+                                            <th>Hora</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resultsTableBody">
+                                        <tr class="empty-row">
+                                            <td colspan="6">Aún no se han iniciado envíos</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Live Terminal Logs -->
+                        <div class="logs-section mt-4">
+                            <div class="logs-header">
+                                <div class="logs-title">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                    <span>Consola de Actividad</span>
+                                </div>
+                                <button id="btnClearLogs" class="btn-link">Limpiar</button>
+                            </div>
+                            <div id="logsTerminal" class="logs-terminal">
+                                <div class="log-entry log-info">[Sistema] Panel inicializado correctamente.</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Vincular WhatsApp</h3>
+                <button id="btnCloseQrModal" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrSpinner" class="qr-spinner">
+                    <div class="spinner"></div>
+                    <p class="mt-2 text-muted">Generando código QR...</p>
+                </div>
+                <div id="qrImageWrapper" class="qr-image-wrapper hidden">
+                    <img id="qrCodeImg" alt="Código QR WhatsApp" class="qr-img">
+                </div>
+                <div class="qr-instructions mt-3">
+                    <ol>
+                        <li>Abre WhatsApp en tu teléfono móvil.</li>
+                        <li>Toca los <b>tres puntos</b> (Android) o ve a <b>Configuración</b> (iPhone).</li>
+                        <li>Selecciona <b>Dispositivos vinculados</b>.</li>
+                        <li>Toca <b>Vincular un dispositivo</b> y apunta la cámara a esta pantalla.</li>
+                    </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Action Modal -->
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header">
+                <h3 id="confirmModalTitle">Confirmar Acción</h3>
+                <button id="btnCancelConfirm" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage" class="confirm-message">¿Estás seguro de realizar esta acción?</p>
+                <div id="confirmModalDetails" class="confirm-details hidden"></div>
+                <div class="confirm-actions mt-4">
+                    <button id="btnConfirmCancel" class="btn btn-secondary">Cancelar</button>
+                    <button id="btnConfirmProceed" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span id="btnConfirmProceedText">Confirmar e Iniciar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
